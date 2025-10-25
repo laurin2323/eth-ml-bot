@@ -18,11 +18,11 @@ class SimpleBacktester:
 
             if position == 0 and row_prev["entry_long"]:
                 position = 1
-                entry_price = row["Close"] * (1 + self.slip + self.fees)
+                entry_price = row["Open"] * (1 + self.slip + self.fees)
 
             if position == 1:
                 if row_prev["exit_long"]:
-                    exit_price = row["Close"] * (1 - self.slip - self.fees)
+                    exit_price = row["Open"] * (1 - self.slip - self.fees)
                     equity.append(equity[-1] * (exit_price / entry_price))
                     position = 0
                     entry_price = None

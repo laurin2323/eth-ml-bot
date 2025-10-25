@@ -2,9 +2,12 @@
 from pathlib import Path
 import pandas as pd
 
-def compute_trades(df_with_proba: pd.DataFrame, signals: pd.DataFrame) -> pd.DataFrame:
-    """Erzeuge saubere Entry/Exit-Paare (1 Position max)."""
+def compute_trades(df_with_proba: pd.DataFrame, signals: pd.DataFrame, fees_bps: int = 20, slippage_bps: int = 5) -> pd.DataFrame:
+    """Erzeuge saubere Entry/Exit-Paare (1 Position max) mit Fees und Slippage."""
     d = df_with_proba.join(signals).dropna().copy()
+
+    fee = fees_bps / 10000   # z. B. 20 bps = 0.2 %
+    slip = slippage_bps / 10000
 
     trades = []
     pos = 0
@@ -19,11 +22,11 @@ def compute_trades(df_with_proba: pd.DataFrame, signals: pd.DataFrame) -> pd.Dat
         if pos == 0 and prev["entry_long"]:
             pos = 1
             entry_idx = cur_idx
-            entry_price = cur["Close"]
+            entry_price = cur["Open"] * (1 + slip + fee)
 
         elif pos == 1 and prev["exit_long"]:
             exit_idx = cur_idx
-            exit_price = cur["Close"]
+            exit_price = cur["Open"] * (1 - slip - fee)
             ret = exit_price / entry_price - 1
             trades.append({
                 "entry_date": entry_idx, "entry_price": entry_price,
@@ -35,3 +38,4 @@ def compute_trades(df_with_proba: pd.DataFrame, signals: pd.DataFrame) -> pd.Dat
             entry_price = None
 
     return pd.DataFrame(trades)
+

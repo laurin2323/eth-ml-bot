@@ -30,22 +30,29 @@ def main():
 
     # 2) Split
     split_date = "2023-01-01"
-    train = lab.loc[:split_date]
-    test  = lab.loc[split_date:]
+    train_full = lab.loc[:split_date]
+    test       = lab.loc[split_date:]
 
-    # 3) Modell + Inferenz
+    # 2b) Validation-Split NUR im Train-Bereich (kein Leak)
+    val_date = "2022-06-01"
+    train = train_full.loc[:val_date]
+    val   = train_full.loc[val_date:]
+
+    # 3) Modell auf TRAIN fitten
     model = train_logreg(train)
-    test_pred = infer_proba(model, test)
-    
-    # 4) Threshold-Sweep
-    res = sweep_threshold(test_pred)
+
+    # 4) Threshold-Sweep auf VALIDATION (nicht auf Test!)
+    val_pred = infer_proba(model, val)
+    res = sweep_threshold(val_pred)  # sucht bestes p_thr anhand Sharpe auf Validation
     best_thr = float(res.iloc[0]["p_thr"])
 
-    # 5) Backtest mit best_thr
+    # 5) Finale Inferenz + Backtest auf TEST mit gefixtem Threshold
+    test_pred = infer_proba(model, test)
     signals = ml_policy(test_pred, p_thr=best_thr)
     bt = SimpleBacktester(test_pred)
     equity = bt.run(signals)
     ret = returns_from_equity(equity)
+
 
     # --- Trades berechnen und exportieren ---
     trades = compute_trades(test_pred, signals)
@@ -96,8 +103,8 @@ def main():
     price_fig.add_trace(go.Scatter(x=feat.index, y=feat["ema50"], name="EMA50", mode="lines"))
     price_fig.add_trace(go.Scatter(x=feat.index, y=feat["ema200"], name="EMA200", mode="lines"))
 
-    entry_prices = feat.reindex(exec_entries_idx)["Close"]
-    exit_prices  = feat.reindex(exec_exits_idx)["Close"]
+    entry_prices = feat.reindex(exec_entries_idx)["Open"]
+    exit_prices  = feat.reindex(exec_exits_idx)["Open"]
 
     price_fig.add_trace(go.Scatter(
         x=exec_entries_idx, y=entry_prices, mode="markers",
