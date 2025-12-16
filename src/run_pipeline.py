@@ -25,8 +25,20 @@ def main():
     model = train_logreg(train)
 
     # 6) Inferenz + Policy
+    P_THR = 0.8   # <-- NUR DIESEN WERT ÄNDERN
+
     test_pred = infer_proba(model, test)
-    signals = ml_policy(test_pred, p_thr=0.55)
+    signals_df = ml_policy(test_pred, p_thr=P_THR)
+    signals = signals_df["entry_long"].astype(int)
+
+    print("P_THR:", P_THR)
+    print("Anzahl Entry-Signale:", signals.sum())
+
+    # Fake-Equity nur zum Sehen eines Effekts
+    equity = signals.cumsum()
+    print("Finale Fake-Equity:", equity.iloc[-1])
+
+
 
     # 7) Backtest
     bt = SimpleBacktester(test_pred)

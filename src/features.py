@@ -6,6 +6,7 @@ from ta.volatility import AverageTrueRange, BollingerBands
 
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
     d = df.copy()
+    
     d["ema50"]  = EMAIndicator(d["Close"], 50).ema_indicator()
     d["ema200"] = EMAIndicator(d["Close"], 200).ema_indicator()
     d["rsi14"]  = RSIIndicator(d["Close"], 14).rsi()

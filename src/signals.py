@@ -22,7 +22,7 @@ def main():
     test_pred = infer_proba(model, test)
 
     # Threshold kannst du später tunen; nimm vorerst 0.55
-    signals = ml_policy(test_pred, p_thr=0.55)
+    signals = ml_policy(test_pred, p_thr=0.80)
 
     out = test_pred.join(signals).dropna().copy()
     # Nur tatsächliche Entry-Zeilen
