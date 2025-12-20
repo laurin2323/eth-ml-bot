@@ -1,7 +1,23 @@
+"""
+Modul zum Laden von Kryptowährungs-Daten via yfinance.
+"""
+
 import yfinance as yf
 import pandas as pd
 
 def download_eth_1d(start="2019-01-01", end=None, ticker="ETH-USD"):
+    """
+    Lädt tägliche OHLCV-Daten für Ethereum von Yahoo Finance.
+
+    Args:
+        start: Start-Datum im Format "YYYY-MM-DD" (default: "2019-01-01")
+        end: End-Datum im Format "YYYY-MM-DD" (default: None = heute)
+        ticker: Yahoo Finance Ticker-Symbol (default: "ETH-USD")
+
+    Returns:
+        DataFrame mit Spalten: Open, High, Low, Close, Volume
+        Index: Datum (DatetimeIndex)
+    """
     df = yf.download(
         tickers=ticker,
         interval="1d",

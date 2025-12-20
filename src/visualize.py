@@ -19,6 +19,7 @@ from src.policy import ml_policy
 from src.backtest import SimpleBacktester
 from src.eval import returns_from_equity, sharpe, max_drawdown, cagr, sweep_threshold
 from src.trades import compute_trades
+from src.config import P_EXIT_THR
 
 def main():
     Path("plots").mkdir(parents=True, exist_ok=True)
@@ -38,20 +39,35 @@ def main():
     train = train_full.loc[:val_date]
     val   = train_full.loc[val_date:]
 
+    from src.config import P_EXIT_THR, ENTRY_THR_GRID
+
     # 3) Modell auf TRAIN fitten
     model = train_logreg(train)
 
-    # 4) Threshold-Sweep auf VALIDATION (nicht auf Test!)
+    # 4) Threshold-Sweep auf VALIDATION (nur Entry, Exit fix)
     val_pred = infer_proba(model, val)
-    res = sweep_threshold(val_pred)  # sucht bestes p_thr anhand Sharpe auf Validation
-    best_thr = float(res.iloc[0]["p_thr"])
+    res = sweep_threshold(
+        val_pred,
+        entry_thresholds=ENTRY_THR_GRID,
+        p_exit_thr=P_EXIT_THR
+    )
+    best_entry_thr = float(res.iloc[0]["p_entry_thr"])
 
-    # 5) Finale Inferenz + Backtest auf TEST mit gefixtem Threshold
+    # 5) Finale Inferenz + Backtest auf TEST mit gefixten Thresholds
     test_pred = infer_proba(model, test)
-    signals = ml_policy(test_pred, p_thr=best_thr)
+    signals = ml_policy(
+        test_pred,
+        p_entry_thr=best_entry_thr,
+        p_exit_thr=P_EXIT_THR
+    )
     bt = SimpleBacktester(test_pred)
     equity = bt.run(signals)
+    
+    print("Equity start/end:", float(equity.iloc[0]), float(equity.iloc[-1]))
+    print("Equity min/max:", float(equity.min()), float(equity.max()))
+
     ret = returns_from_equity(equity)
+
 
 
     # --- Trades berechnen und exportieren ---
@@ -92,7 +108,7 @@ def main():
 
     print("\nThreshold-Sweep (Top 5):")
     print(res.head(5).to_string(index=False))
-    print(f"\nBest p_thr: {best_thr}")
+    print(f"\nBest p_entry_thr: {best_entry_thr} (p_exit_thr={P_EXIT_THR})")
     print(f"Sharpe: {s}")
     print(f"CAGR%: {cg}")
     print(f"MaxDD%: {dd}")
@@ -121,7 +137,8 @@ def main():
     # 7) Plot: Equity-Kurve
     eq_fig = go.Figure()
     eq_fig.add_trace(go.Scatter(x=equity.index, y=equity, name="Equity", mode="lines"))
-    eq_fig.update_layout(title=f"Equity-Kurve (p_thr={best_thr}, Sharpe={s}, MaxDD={dd}%)",
+    eq_fig.update_layout(
+    title=f"Equity-Kurve (p_entry={best_entry_thr}, p_exit={P_EXIT_THR}, Sharpe={s}, MaxDD={dd}%)",
                          xaxis_title="Datum", yaxis_title="Equity")
     eq_fig.write_html("plots/equity_curve.html")
 
@@ -129,7 +146,6 @@ def main():
     hist_fig = px.histogram(pd.Series(ret, name="daily_ret"), x="daily_ret", nbins=60,
                             title="Histogramm täglicher Returns")
     hist_fig.write_html("plots/returns_hist.html")
-
 
 if __name__ == "__main__":
     main()
