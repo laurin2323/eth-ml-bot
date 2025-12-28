@@ -51,3 +51,8 @@ build/
 
 # Windows reserved filenames
 nul
+
+# Private documents (nicht für GitHub)
+BERICHT.md
+PRESENTATION.md
+SPEAKER_NOTES.md
