@@ -56,3 +56,6 @@ nul
 BERICHT.md
 PRESENTATION.md
 SPEAKER_NOTES.md
+
+# Claude Code internal files
+.claude/
