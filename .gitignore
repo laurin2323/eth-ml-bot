@@ -59,3 +59,10 @@ SPEAKER_NOTES.md
 
 # Claude Code internal files
 .claude/
+
+# Experimental runs and notebooks
+runs/
+notebooks/
+
+# Windows errors
+nul
