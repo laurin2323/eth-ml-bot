@@ -52,17 +52,6 @@ build/
 # Windows reserved filenames
 nul
 
-# Private documents (nicht für GitHub)
-BERICHT.md
-PRESENTATION.md
-SPEAKER_NOTES.md
-
-# Claude Code internal files
-.claude/
-
 # Experimental runs and notebooks
 runs/
 notebooks/
-
-# Windows errors
-nul
